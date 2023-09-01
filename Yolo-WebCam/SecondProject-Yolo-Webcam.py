@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import cv2
+import numpy as np
 
 cap = cv2.VideoCapture(0);
 cap.set(3, 640)
@@ -7,7 +8,7 @@ cap.set(4,480)
 
 model = YOLO('../Yolo-Weights/pesos.pt')
 classNames = ["head", "helmet"]
-
+listas_rosto = []
 while True:
     success, img = cap.read()
     results = model(img, stream=True)

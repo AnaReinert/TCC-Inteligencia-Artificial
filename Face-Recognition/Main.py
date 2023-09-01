@@ -7,19 +7,31 @@ from FaceRecognition import get_rostos
 rostos_conhecidos, nomes_dos_rostos = get_rostos()
 model = YOLO('../Yolo-Weights/pesos.pt')
 video_capture = cv2.VideoCapture(0)
+
+def pega_rosto(img):
+    rosto = ()
+    results = model(img, stream=True)
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            x1, y1, x2, y2 = box.xyxy[0]
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+            if int(box.cls[0]) == 0:
+                rosto = (y1+50, x2, y2, x1)
+                return [rosto]
+    #Possibilitar achar mais de um rosto. Da forma que está, ele só está levando em consideração 1 rosto.
+    return []
+
 while True:
     ret, frame = video_capture.read()
 
-    rgb_frame = frame[:, :, ::-1]
+    rgb_frame = np.ascontiguousarray(frame[:, :, ::-1])
 
-   # localizacao_dos_rostos = model(rgb_frame, stream=True)
-    localizacao_dos_rostos = fr.face_locations(rgb_frame)
+    localizacao_dos_rostos = pega_rosto(rgb_frame)
     rosto_desconhecidos = fr.face_encodings(rgb_frame, localizacao_dos_rostos)
 
     for (top, right, bottom, left), rosto_desconhecido in zip(localizacao_dos_rostos, rosto_desconhecidos):
         resultados = fr.compare_faces(rostos_conhecidos, rosto_desconhecido)
-        print(resultados)
-
         face_distances = fr.face_distance(rostos_conhecidos, rosto_desconhecido)
 
         melhor_id = np.argmin(face_distances)
@@ -38,7 +50,7 @@ while True:
         # Texto
         cv2.putText(frame, nome, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
-        cv2.imshow('Webcam_facerecognition', frame)
+    cv2.imshow('Webcam_facerecognition', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
